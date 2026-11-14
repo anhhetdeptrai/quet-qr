@@ -97,7 +97,7 @@ h2{font-size:16px;margin:0 0 10px}
   <section id="v-scan" class="hidden">
     <div class="card">
       <div class="cam hidden" id="camBox">
-        <video id="video" playsinline muted></video>
+        <video id="video" autoplay playsinline muted webkit-playsinline></video>
         <div class="frame"></div>
         <div class="hint" id="camHint">Đưa mã QR vào khung</div>
       </div>
@@ -307,16 +307,29 @@ if("BarcodeDetector" in window){ try{ detector=new BarcodeDetector({formats:["qr
 const scanCv=document.createElement("canvas"), scanCx=scanCv.getContext("2d",{willReadFrequently:true});
 async function startCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ toast("Trình duyệt không mở được camera – dùng “Chụp ảnh thẻ”."); return; }
-  try{
-    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false});
-  }catch(e){ toast("Chưa được phép dùng camera. Cho phép camera trong trình duyệt, hoặc dùng “Chụp ảnh thẻ”."); return; }
-  const v=$("video"); v.srcObject=S.stream; await v.play().catch(()=>{});
+  // Hiện khung camera TRƯỚC khi gắn video (iPhone không hiển thị video bắt đầu khi đang ẩn)
   $("camBox").classList.remove("hidden"); $("stopCamBtn").classList.remove("hidden"); $("scanBtn").classList.add("hidden");
+  const v=$("video");
+  v.setAttribute("playsinline",""); v.setAttribute("webkit-playsinline",""); v.muted=true; v.autoplay=true;
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
+  }catch(e){
+    try{ S.stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false}); }
+    catch(e2){ stopCam(); toast("Chưa được phép dùng camera. Mở bằng Safari/Chrome và cho phép camera, hoặc dùng “Chụp ảnh thẻ”."); return; }
+  }
+  v.srcObject=S.stream;
+  const tryPlay=()=>v.play().catch(()=>{});
+  v.onloadedmetadata=tryPlay; await tryPlay();
+  // Nếu vẫn đen, chạm vào khung để phát lại
+  $("camBox").onclick=tryPlay;
   S.scanning=true; tick();
+  setTimeout(()=>{ if(S.scanning && (!v.videoWidth || v.paused)) $("camHint").textContent="Chưa thấy hình? Chạm vào đây, hoặc mở trang bằng Safari."; },2500);
 }
 function stopCam(){
   S.scanning=false;
   if(S.stream){ S.stream.getTracks().forEach(t=>t.stop()); S.stream=null; }
+  const v=$("video"); try{ v.pause(); v.srcObject=null; }catch(e){}
+  $("camHint").textContent="Đưa mã QR vào khung";
   $("camBox").classList.add("hidden"); $("stopCamBtn").classList.add("hidden"); $("scanBtn").classList.remove("hidden");
 }
 async function tick(){
