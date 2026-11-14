@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#c2410c">
+<title>Quét QR khách hàng – Triển lãm</title>
+<style>
+:root{
+  --bg:#f6f5f2; --card:#fff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e4e2dc;
+  --accent:#c2410c; --accent-ink:#fff; --ok:#15803d; --warn:#b45309; --star:#f59e0b;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#161614;--card:#211f1d;--ink:#f1efe9;--muted:#a19e96;--line:#34322e;--accent:#f97316;--accent-ink:#1b1206;--ok:#4ade80;--warn:#fbbf24}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+header h1{font-size:18px;margin:0;flex:1;letter-spacing:-.01em}
+.chip{color:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.muted{color:var(--muted)} .small{font-size:13px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px 16px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-align:center}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.big{padding:22px;font-size:19px}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px} .row>*{flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.name-btn{padding:18px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-weight:600;cursor:pointer;font-size:16px}
+.name-btn:active{transform:scale(.98)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=tel],input[type=email],textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+textarea{min-height:70px;resize:vertical}
+.stars{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
+.star{aspect-ratio:1;border:1px solid var(--line);border-radius:12px;background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+.star svg{width:28px;height:28px}
+.star.on{background:color-mix(in srgb,var(--star) 18%,var(--card));border-color:var(--star);color:var(--ink)}
+.star.on svg path{fill:var(--star);stroke:var(--star)}
+.score{font-size:40px;font-weight:700;text-align:center;margin:4px 0}
+.list{list-style:none;margin:0;padding:0}
+.list li{padding:10px 0;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.list li:first-child{border-top:0}
+.list .info{flex:1;min-width:0}
+.list .info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-weight:700;font-size:14px;padding:4px 8px;border-radius:8px;background:color-mix(in srgb,var(--star) 20%,transparent);white-space:nowrap}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:15px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;word-break:break-word}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;z-index:9}
+.toast.show{opacity:1}
+.note{padding:10px 12px;border-radius:10px;font-size:14px;margin-bottom:12px;background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.hidden{display:none!important}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;border-top:0}
+.scroll{overflow-x:auto}
+.link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font-size:13px}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 0.8s linear infinite;margin:0 auto}
+@keyframes s{to{transform:rotate(360deg)}}
+h2{font-size:16px;margin:0 0 10px}
+</style>
+<style>
+.cam{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:3/4;margin-bottom:10px}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .frame{position:absolute;inset:18% 14%;border:3px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
+.cam .hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 3px #000}
+.pill{display:inline-block;font-size:12px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--warn) 20%,transparent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Khách hàng triển lãm</h1>
+    <button class="chip hidden" id="whoChip"></button>
+  </header>
+
+  <div id="status" class="note hidden"></div>
+
+  <section id="v-pin" class="hidden">
+    <div class="card">
+      <h2>Nhập mã PIN</h2>
+      <p class="muted small" style="margin-top:0">Hỏi quản lý để lấy mã PIN của gian hàng.</p>
+      <input type="password" id="pinInput" inputmode="numeric" placeholder="Mã PIN" autocomplete="off">
+      <button class="btn" id="pinOk" style="margin-top:12px">Vào</button>
+    </div>
+  </section>
+
+  <section id="v-pick" class="hidden">
+    <div class="card">
+      <h2>Bạn là ai?</h2>
+      <p class="muted small" style="margin-top:0">Chọn tên của bạn để bắt đầu quét.</p>
+      <div class="grid" id="nameGrid"></div>
+    </div>
+  </section>
+
+  <section id="v-scan" class="hidden">
+    <div class="card">
+      <div class="cam hidden" id="camBox">
+        <video id="video" playsinline muted></video>
+        <div class="frame"></div>
+        <div class="hint" id="camHint">Đưa mã QR vào khung</div>
+      </div>
+      <button class="btn big" id="scanBtn">📷 Quét mã QR</button>
+      <button class="btn ghost hidden" id="stopCamBtn" style="margin-top:10px">Tắt camera</button>
+      <input type="file" id="camInput" accept="image/*" capture="environment" class="hidden">
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="photoBtn">Chụp ảnh thẻ</button>
+        <button class="btn ghost" id="manualBtn">Nhập tay</button>
+      </div>
+      <div id="scanBusy" class="hidden" style="margin-top:14px"><div class="spin"></div><p class="muted small" style="text-align:center">Đang đọc mã…</p></div>
+      <p class="muted small" style="margin:12px 0 0" id="scanHint">Bấm “Quét mã QR” rồi đưa camera vào mã QR trên thẻ khách.</p>
+    </div>
+    <div class="card">
+      <h2>Khách bạn đã quét <span class="muted" id="myCount"></span></h2>
+      <div id="queueNote" class="note hidden"></div>
+      <ul class="list" id="myList"></ul>
+    </div>
+  </section>
+
+  <section id="v-confirm" class="hidden">
+    <div class="card">
+      <h2>Thông tin khách hàng</h2>
+      <div id="ocrNote" class="note hidden"></div>
+      <div id="dupNote" class="note hidden"></div>
+      <label for="fName">Tên khách hàng</label><input type="text" id="fName">
+      <label for="fDept">Bộ phận</label><input type="text" id="fDept">
+      <label for="fCompany">Công ty</label><input type="text" id="fCompany">
+      <label for="fPhone">Số điện thoại</label><input type="tel" id="fPhone">
+      <label for="fEmail">Email (nhập tay)</label><input type="email" id="fEmail" placeholder="Nhập email khách hàng" inputmode="email" autocomplete="off">
+      <div class="row" style="margin-top:16px">
+        <button class="btn ghost" id="rescanBtn">Quét lại</button>
+        <button class="btn" id="confirmBtn">Xác nhận</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-rate" class="hidden">
+    <div class="card">
+      <h2>Đánh giá khả năng hợp tác</h2>
+      <dl class="kv" id="rateSummary"></dl>
+      <div class="score" id="scoreText">–/10</div>
+      <div class="stars" id="stars"></div>
+      <label for="fNote">Ghi chú (không bắt buộc)</label>
+      <textarea id="fNote" placeholder="Nhu cầu, sản phẩm quan tâm, hẹn gọi lại…"></textarea>
+      <div class="row" style="margin-top:16px">
+        <button class="btn ghost" id="backBtn">Quay lại</button>
+        <button class="btn" id="saveBtn" disabled>Lưu</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="loading" style="padding:40px 0"><div class="spin"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="lib/jsQR.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const URL_API = (window.APP_CONFIG && window.APP_CONFIG.SCRIPT_URL || "").trim();
+const STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+const S = { names:[], ocr:false, pin:"", leads:[], me:null, draft:null, rating:0, dupId:null, view:null, stream:null, scanning:false, lastFrame:null };
+
+function lsGet(k){ try{return localStorage.getItem(k)}catch(e){return null} }
+function lsSet(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2800); }
+function status(msg){ const s=$("status"); if(!msg){s.classList.add("hidden");return} s.textContent=msg; s.classList.remove("hidden"); }
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+/* ---------- gọi Google Apps Script ---------- */
+async function api(action, data){
+  // text/plain để tránh CORS preflight với Apps Script
+  const r = await fetch(URL_API, {method:"POST", body:JSON.stringify(Object.assign({action, pin:S.pin}, data||{})), redirect:"follow"});
+  if(!r.ok) throw new Error("http "+r.status);
+  const j = await r.json();
+  if(j && j.error==="pin"){ const e=new Error("pin"); e.pin=true; throw e; }
+  return j;
+}
+
+/* ---------- hàng chờ khi mất mạng ---------- */
+function queue(){ try{ return JSON.parse(lsGet("expo_queue")||"[]"); }catch(e){ return []; } }
+function setQueue(q){ lsSet("expo_queue", JSON.stringify(q)); renderQueue(); }
+let flushing=false;
+async function flush(){
+  if(flushing) return; const q=queue(); if(!q.length) return; flushing=true;
+  try{
+    for(const lead of q){
+      try{ const r=await api("save",{lead}); if(r && r.ok){ setQueue(queue().filter(x=>x.id!==lead.id)); } else break; }
+      catch(e){ break; }
+    }
+  } finally { flushing=false; }
+  if(!queue().length) refresh();
+}
+function renderQueue(){
+  const n=queue().filter(l=>l.sales===S.me).length, el=$("queueNote");
+  if(n){ el.textContent=`${n} khách đang chờ gửi (mất mạng). App tự gửi lại khi có mạng – đừng xoá dữ liệu trình duyệt.`; el.classList.remove("hidden"); }
+  else el.classList.add("hidden");
+  renderMine();
+}
+
+function show(v){
+  S.view=v;
+  if(v!=="scan") stopCam();
+  ["pin","pick","scan","confirm","rate"].forEach(x=>$("v-"+x).classList.toggle("hidden",x!==v));
+  $("loading").classList.add("hidden");
+  $("whoChip").classList.toggle("hidden", !S.me || v==="pick" || v==="pin");
+  $("whoChip").textContent = S.me ? S.me+" · Đổi" : "";
+  window.scrollTo(0,0);
+}
+
+function renderNames(){
+  const g=$("nameGrid"); g.textContent="";
+  if(!S.names.length){ const p=document.createElement("p"); p.className="muted small"; p.textContent="Chưa có tên nhân viên. Quản lý thêm tên vào tab “Cấu hình” trong Google Sheets."; g.appendChild(p); }
+  S.names.forEach(n=>{ const b=document.createElement("button"); b.className="name-btn"; b.textContent=n;
+    b.onclick=()=>{ S.me=n; lsSet("expo_me",n); S.leads=[]; renderQueue(); show("scan"); refresh(); }; g.appendChild(b); });
+}
+
+/* ---------- vCard / MECARD parsing ---------- */
+function decodeQP(s){
+  const bytes=[]; s=s.replace(/=\r?\n/g,"");
+  for(let i=0;i<s.length;i++){ if(s[i]==="="&&/^[0-9A-F]{2}$/i.test(s.substr(i+1,2))){bytes.push(parseInt(s.substr(i+1,2),16));i+=2} else bytes.push(s.charCodeAt(i)&255) }
+  try{return new TextDecoder("utf-8").decode(new Uint8Array(bytes))}catch(e){return s}
+}
+function unesc(v){ return v.replace(/\\n/gi," ").replace(/\\([,;:\\])/g,"$1").trim(); }
+function splitUnesc(v,sep){ const out=[];let cur="";for(let i=0;i<v.length;i++){ if(v[i]==="\\"&&i+1<v.length){cur+=v[i]+v[i+1];i++;continue} if(v[i]===sep){out.push(cur);cur="";continue} cur+=v[i]; } out.push(cur); return out.map(unesc); }
+
+function parseVCard(text){
+  const lines=text.replace(/\r\n[ \t]/g,"").replace(/\n[ \t]/g,"").split(/\r?\n/);
+  const r={name:"",dept:"",company:"",phone:"",email:"",title:""}; let n="";
+  for(const line of lines){
+    const i=line.indexOf(":"); if(i<0) continue;
+    const head=line.slice(0,i), params=head.split(";"), key=params[0].toUpperCase().replace(/^ITEM\d+\./,"");
+    let val=line.slice(i+1);
+    if(/ENCODING=QUOTED-PRINTABLE/i.test(head)) val=decodeQP(val);
+    if(key==="FN") r.name=r.name||unesc(val);
+    else if(key==="N") n=splitUnesc(val,";").filter(Boolean).reverse().join(" ");
+    else if(key==="ORG"){ const p=splitUnesc(val,";"); r.company=r.company||p[0]||""; if(p[1]) r.dept=p.slice(1).filter(Boolean).join(" / "); }
+    else if(key==="X-DEPARTMENT"||key==="X-DEPT") r.dept=r.dept||unesc(val);
+    else if(key==="TITLE"||key==="ROLE") r.title=r.title||unesc(val);
+    else if(key==="TEL"){ const v=unesc(val).replace(/^tel:/i,""); if(!r.phone||/CELL|MOBILE/i.test(head)) r.phone=v; }
+    else if(key==="EMAIL") r.email=r.email||unesc(val);
+  }
+  if(!r.name) r.name=n;
+  if(!r.dept) r.dept=r.title;
+  return r;
+}
+function parseMeCard(text){
+  const r={name:"",dept:"",company:"",phone:"",email:""};
+  const body=text.replace(/^MECARD:/i,"");
+  splitUnesc(body,";").forEach(p=>{ const i=p.indexOf(":"); if(i<0)return; const k=p.slice(0,i).toUpperCase(), v=p.slice(i+1);
+    if(k==="N") r.name=v.split(",").reverse().join(" ").trim(); else if(k==="ORG") r.company=v; else if(k==="TEL") r.phone=r.phone||v; else if(k==="EMAIL") r.email=v; else if(k==="TITLE"||k==="NOTE") r.dept=r.dept||v; });
+  return r;
+}
+function parseURL(text){
+  const r={name:"",dept:"",company:"",phone:"",email:"",url:text.trim()};
+  let u; try{ u=new URL(text.trim()); }catch(e){ return r; }
+  const pick=(...keys)=>{ for(const [k,v] of u.searchParams){ const kk=k.toLowerCase().replace(/[_-]/g,""); if(keys.includes(kk)&&v) return v.trim(); } return ""; };
+  r.phone=pick("mobilenumber","mobile","phone","phonenumber","tel","sdt","dienthoai");
+  r.name=pick("name","fullname","visitorname","hoten","ten","customername");
+  r.company=pick("company","companyname","org","organization","congty");
+  r.dept=pick("department","dept","position","title","jobtitle","bophan","chucvu");
+  r.email=pick("email","mail");
+  return r;
+}
+function parseQR(text){
+  if(/^\s*https?:\/\//i.test(text)) return parseURL(text);
+  if(/BEGIN:VCARD/i.test(text)) return parseVCard(text);
+  if(/^MECARD:/i.test(text)) return parseMeCard(text);
+  try{ const j=JSON.parse(text); if(j&&typeof j==="object") return {name:j.name||j.fullName||"",dept:j.department||j.dept||"",company:j.company||j.org||"",phone:j.phone||j.tel||"",email:j.email||""}; }catch(e){}
+  const parts=text.split(/[|;\t]/).map(s=>s.trim());
+  if(parts.length>=3) return {name:parts[0]||"",dept:parts[1]||"",company:parts[2]||"",phone:parts[3]||"",email:parts[4]||""};
+  const ph=(text.match(/(\+?84|0)\d[\d .-]{7,12}\d/)||[""])[0];
+  return {name:"",dept:"",company:"",phone:ph,email:""};
+}
+
+/* ---------- QR decoding from photo ---------- */
+async function loadImage(file){
+  if(window.createImageBitmap){ try{ return await createImageBitmap(file,{imageOrientation:"from-image"}) }catch(e){} }
+  return await new Promise((res,rej)=>{ const u=URL.createObjectURL(file), im=new Image(); im.onload=()=>{res(im)}; im.onerror=rej; im.src=u; });
+}
+async function decodeFile(file){
+  const img=await loadImage(file);
+  const W=img.width||img.naturalWidth, H=img.height||img.naturalHeight;
+  if("BarcodeDetector" in window){
+    try{ const det=new BarcodeDetector({formats:["qr_code"]}); const r=await det.detect(img); if(r&&r[0]&&r[0].rawValue) return r[0].rawValue; }catch(e){}
+  }
+  const cv=document.createElement("canvas"), cx=cv.getContext("2d",{willReadFrequently:true});
+  for(const max of [1200,800,1800,500]){
+    const sc=Math.min(1,max/Math.max(W,H)); cv.width=Math.round(W*sc); cv.height=Math.round(H*sc);
+    cx.drawImage(img,0,0,cv.width,cv.height);
+    const d=cx.getImageData(0,0,cv.width,cv.height);
+    const code=jsQR(d.data,cv.width,cv.height,{inversionAttempts:"attemptBoth"});
+    if(code&&code.data) return code.data;
+    await new Promise(r=>setTimeout(r,0));
+  }
+  return null;
+}
+
+
+
+
+/* ---------- camera quét trực tiếp ---------- */
+let detector=null;
+if("BarcodeDetector" in window){ try{ detector=new BarcodeDetector({formats:["qr_code"]}); }catch(e){} }
+const scanCv=document.createElement("canvas"), scanCx=scanCv.getContext("2d",{willReadFrequently:true});
+async function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ toast("Trình duyệt không mở được camera – dùng “Chụp ảnh thẻ”."); return; }
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  }catch(e){ toast("Chưa được phép dùng camera. Cho phép camera trong trình duyệt, hoặc dùng “Chụp ảnh thẻ”."); return; }
+  const v=$("video"); v.srcObject=S.stream; await v.play().catch(()=>{});
+  $("camBox").classList.remove("hidden"); $("stopCamBtn").classList.remove("hidden"); $("scanBtn").classList.add("hidden");
+  S.scanning=true; tick();
+}
+function stopCam(){
+  S.scanning=false;
+  if(S.stream){ S.stream.getTracks().forEach(t=>t.stop()); S.stream=null; }
+  $("camBox").classList.add("hidden"); $("stopCamBtn").classList.add("hidden"); $("scanBtn").classList.remove("hidden");
+}
+async function tick(){
+  if(!S.scanning) return;
+  const v=$("video");
+  if(v.readyState>=2 && v.videoWidth){
+    let txt=null;
+    try{
+      if(detector){ const r=await detector.detect(v); if(r&&r[0]) txt=r[0].rawValue; }
+      else{
+        const sc=Math.min(1,720/Math.max(v.videoWidth,v.videoHeight));
+        scanCv.width=Math.round(v.videoWidth*sc); scanCv.height=Math.round(v.videoHeight*sc);
+        scanCx.drawImage(v,0,0,scanCv.width,scanCv.height);
+        const d=scanCx.getImageData(0,0,scanCv.width,scanCv.height);
+        const c=jsQR(d.data,scanCv.width,scanCv.height,{inversionAttempts:"dontInvert"}); if(c) txt=c.data;
+      }
+    }catch(e){}
+    if(txt && S.scanning){
+      const frame=grabFrame(v);
+      stopCam(); try{ navigator.vibrate&&navigator.vibrate(80); }catch(e){}
+      handleResult(txt, frame); return;
+    }
+  }
+  setTimeout(tick, 120);
+}
+function grabFrame(v){
+  try{ const sc=Math.min(1,1400/Math.max(v.videoWidth,v.videoHeight)); const c=document.createElement("canvas");
+    c.width=Math.round(v.videoWidth*sc); c.height=Math.round(v.videoHeight*sc); c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+    return c.toDataURL("image/jpeg",0.85); }catch(e){ return null; }
+}
+
+/* ---------- đọc chữ trên thẻ ---------- */
+async function fileToJpeg(file,max=1400){
+  const img=await loadImage(file);
+  const W=img.width||img.naturalWidth, H=img.height||img.naturalHeight, sc=Math.min(1,max/Math.max(W,H));
+  const cv=document.createElement("canvas"); cv.width=Math.round(W*sc); cv.height=Math.round(H*sc);
+  cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); return cv.toDataURL("image/jpeg",0.85);
+}
+function fillEmpty(o){
+  if(!o||typeof o!=="object") return 0; let n=0;
+  [["name","fName"],["dept","fDept"],["company","fCompany"],["phone","fPhone"]].forEach(([k,id])=>{
+    const v=typeof o[k]==="string"?o[k].trim():""; if(v && !$(id).value.trim()){ $(id).value=v; if(S.draft) S.draft[k]=v; n++; } });
+  return n;
+}
+async function handleResult(txt, imageDataUrl){
+  const d = txt ? Object.assign(parseQR(txt),{raw:txt.slice(0,2000)}) : {name:"",dept:"",company:"",phone:"",email:"",raw:""};
+  openConfirm(d);
+  if(d.name && d.company) return;
+  const note=$("ocrNote");
+  if(!S.ocr || !imageDataUrl){ note.textContent="Mã QR này không chứa tên/công ty – vui lòng nhập tay."; note.classList.remove("hidden"); return; }
+  note.textContent="Đang đọc tên, bộ phận, công ty trên thẻ…"; note.classList.remove("hidden");
+  $("confirmBtn").disabled=true;
+  let res=null; try{ res=await api("ocr",{image:imageDataUrl}); }catch(e){}
+  $("confirmBtn").disabled=false;
+  if(S.view!=="confirm") return;
+  const n=fillEmpty(res); checkDup();
+  note.textContent = n ? "Đã tự điền từ chữ trên thẻ – kiểm tra lại trước khi xác nhận."
+    : "Không đọc được chữ trên thẻ – bấm “Chụp ảnh thẻ” chụp rõ cả thẻ, hoặc nhập tay.";
+}
+async function onPhoto(e){
+  const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f) return;
+  $("scanBusy").classList.remove("hidden");
+  let txt=null, img=null;
+  try{ txt=await decodeFile(f); }catch(err){}
+  try{ if(S.ocr) img=await fileToJpeg(f); }catch(err){}
+  $("scanBusy").classList.add("hidden");
+  if(!txt && !img){ toast("Không đọc được mã QR. Hãy chụp gần và rõ hơn."); return; }
+  handleResult(txt, img);
+}
+
+/* ---------- xác nhận & đánh giá ---------- */
+const FIELDS=[["name","fName"],["dept","fDept"],["company","fCompany"],["phone","fPhone"],["email","fEmail"]];
+const normPhone=p=>(p||"").replace(/\D/g,"").replace(/^84/,"0");
+function openConfirm(d, keepEmail){
+  S.draft=d; $("ocrNote").classList.add("hidden");
+  FIELDS.forEach(([k,id])=>$(id).value = (k==="email" && !keepEmail) ? "" : (d[k]||""));
+  checkDup(); show("confirm");
+}
+function allMine(){ const q=queue().filter(l=>l.sales===S.me); const ids=new Set(q.map(l=>l.id)); return q.concat(S.leads.filter(l=>!ids.has(l.id))); }
+function checkDup(){
+  const p=normPhone($("fPhone").value);
+  const hit=p && allMine().find(l=>normPhone(l.phone)===p);
+  S.dupId = hit ? hit.id : (S.draft&&S.draft.id) || null;
+  const n=$("dupNote");
+  if(hit && !$("fEmail").value.trim() && hit.email) $("fEmail").value=hit.email;
+  if(hit){ n.textContent=`Bạn đã quét khách này lúc ${fmtTime(hit.ts)} (${hit.rating}/10). Lưu lần này sẽ cập nhật đánh giá cũ.`; n.classList.remove("hidden"); }
+  else n.classList.add("hidden");
+}
+function readForm(){ const d={}; FIELDS.forEach(([k,id])=>d[k]=$(id).value.trim()); return d; }
+function renderStars(){
+  const box=$("stars"); box.textContent="";
+  for(let i=1;i<=10;i++){ const b=document.createElement("button"); b.className="star"+(i<=S.rating?" on":""); b.innerHTML=STAR_SVG+"<span>"+i+"</span>";
+    b.onclick=()=>{ S.rating=i; renderStars(); }; box.appendChild(b); }
+  $("scoreText").textContent=(S.rating||"–")+"/10";
+  $("saveBtn").disabled=!S.rating;
+}
+function openRate(){
+  const d=readForm();
+  if(!d.name && !d.phone && !d.company){ toast("Cần ít nhất tên, công ty hoặc số điện thoại."); return; }
+  S.draft=Object.assign(S.draft||{},d);
+  const kv=$("rateSummary"); kv.textContent="";
+  [["Khách",d.name],["Bộ phận",d.dept],["Công ty",d.company],["SĐT",d.phone],["Email",d.email]].forEach(([k,v])=>{ if(!v)return; const dt=document.createElement("dt");dt.textContent=k; const dd=document.createElement("dd");dd.textContent=v; kv.append(dt,dd); });
+  const prev=S.dupId && allMine().find(l=>l.id===S.dupId);
+  S.rating=prev?prev.rating:0; $("fNote").value=prev?(prev.note||""):"";
+  renderStars(); show("rate");
+}
+async function save(){
+  const btn=$("saveBtn"); btn.disabled=true; btn.textContent="Đang lưu…";
+  const d=S.draft, prev=S.dupId && allMine().find(l=>l.id===S.dupId);
+  const lead={ id:S.dupId||uid(), ts:prev?prev.ts:Date.now(), sales:S.me, name:d.name, dept:d.dept, company:d.company, phone:d.phone, email:d.email,
+    rating:S.rating, note:$("fNote").value.trim(), raw:d.raw||"" };
+  // Lưu vào hàng chờ trước → không mất dữ liệu nếu mất mạng giữa chừng
+  setQueue(queue().filter(x=>x.id!==lead.id).concat([lead]));
+  let ok=false;
+  try{ const r=await api("save",{lead}); if(r&&r.ok){ ok=true; setQueue(queue().filter(x=>x.id!==lead.id)); } }
+  catch(e){ if(e.pin){ askPin(); } }
+  btn.textContent="Lưu"; btn.disabled=!S.rating;
+  toast(ok ? "Đã lưu vào Google Sheets ✓" : "Chưa có mạng – đã giữ lại, sẽ tự gửi khi có mạng.");
+  S.draft=null; S.dupId=null; show("scan"); renderQueue(); if(ok) refresh();
+}
+
+/* ---------- danh sách ---------- */
+function fmtTime(ts){ if(!ts) return ""; const d=new Date(ts); const p=n=>String(n).padStart(2,"0"); return `${p(d.getHours())}:${p(d.getMinutes())} ${p(d.getDate())}/${p(d.getMonth()+1)}`; }
+function renderMine(){
+  const q=new Set(queue().map(l=>l.id)), mine=allMine().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  $("myCount").textContent=mine.length?`(${mine.length})`:"";
+  const ul=$("myList"); ul.textContent="";
+  if(!mine.length){ const li=document.createElement("li"); li.className="muted small"; li.textContent="Chưa có khách nào."; ul.appendChild(li); return; }
+  mine.slice(0,100).forEach(l=>{ const li=document.createElement("li");
+    const info=document.createElement("div"); info.className="info";
+    const b=document.createElement("b"); b.textContent=l.name||l.company||l.phone||"(không tên)";
+    const s=document.createElement("span"); s.className="muted small"; s.textContent=[l.company,l.phone,fmtTime(l.ts)].filter(Boolean).join(" · ");
+    info.append(b,s);
+    if(q.has(l.id)){ const pq=document.createElement("span"); pq.className="pill"; pq.textContent="chờ gửi"; info.appendChild(pq); }
+    const bd=document.createElement("span"); bd.className="badge"; bd.textContent="★ "+l.rating;
+    li.append(info,bd); li.style.cursor="pointer";
+    li.onclick=()=>openConfirm(Object.assign({},l),true);
+    ul.appendChild(li); });
+}
+async function refresh(){
+  if(!S.me) return;
+  try{ const r=await api("list",{sales:S.me}); S.leads=r.leads||[]; status(""); renderMine(); }
+  catch(e){ if(e.pin) askPin(); else status("Đang mất mạng – vẫn quét được, dữ liệu sẽ tự gửi khi có mạng."); }
+}
+
+/* ---------- PIN & khởi động ---------- */
+function askPin(){ S.pin=""; lsSet("expo_pin",""); $("pinInput").value=""; show("pin"); }
+async function loadConfig(){
+  const c=await api("config");
+  S.ocr=!!c.ocr;
+  if(c.pinRequired && !c.pinOk) return false;
+  S.names=c.sales||[]; lsSet("expo_names",JSON.stringify(S.names)); return true;
+}
+function enterApp(){
+  if(S.ocr) $("scanHint").innerHTML="Bấm “Quét mã QR” rồi đưa camera vào thẻ khách – giữ cả <b>mã QR, tên và công ty</b> trong khung để app tự điền.";
+  S.me=lsGet("expo_me"); renderNames();
+  if(S.me && S.names.includes(S.me)){ renderQueue(); show("scan"); refresh(); flush(); } else { S.me=null; show("pick"); }
+}
+$("pinOk").onclick=async()=>{
+  S.pin=$("pinInput").value.trim(); $("pinOk").disabled=true;
+  try{ if(await loadConfig()){ lsSet("expo_pin",S.pin); enterApp(); } else toast("Sai mã PIN"); }
+  catch(e){ toast("Không kết nối được – kiểm tra mạng."); }
+  $("pinOk").disabled=false;
+};
+$("pinInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("pinOk").click(); });
+
+$("scanBtn").onclick=startCam;
+$("stopCamBtn").onclick=stopCam;
+$("photoBtn").onclick=()=>{ stopCam(); $("camInput").click(); };
+$("camInput").onchange=onPhoto;
+$("manualBtn").onclick=()=>openConfirm({name:"",dept:"",company:"",phone:"",email:"",raw:""});
+$("rescanBtn").onclick=()=>{ show("scan"); startCam(); };
+$("confirmBtn").onclick=openRate;
+$("fPhone").addEventListener("change",checkDup);
+$("backBtn").onclick=()=>show("confirm");
+$("saveBtn").onclick=save;
+$("whoChip").onclick=()=>{ renderNames(); show("pick"); };
+window.addEventListener("online",flush);
+setInterval(()=>{ if(!document.hidden){ flush(); } },20000);
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) stopCam(); });
+
+(async()=>{
+  if(!URL_API || /DAN_LINK/.test(URL_API)){ status("Chưa cấu hình: mở file config.js và dán link Google Apps Script vào SCRIPT_URL."); $("loading").classList.add("hidden"); return; }
+  S.pin=lsGet("expo_pin")||"";
+  try{
+    if(await loadConfig()) enterApp(); else askPin();
+  }catch(e){
+    // Mất mạng lúc mở app: dùng danh sách tên đã lưu lần trước
+    try{ S.names=JSON.parse(lsGet("expo_names")||"[]"); }catch(_){ S.names=[]; }
+    status("Đang mất mạng – vẫn quét được, dữ liệu sẽ tự gửi khi có mạng.");
+    if(S.names.length) enterApp(); else { $("loading").classList.add("hidden"); status("Không kết nối được. Kiểm tra mạng rồi tải lại trang."); }
+  }
+})();
+})();
+</script>
+</body>
+</html>
